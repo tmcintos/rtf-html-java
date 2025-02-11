@@ -75,6 +75,15 @@ public class RtfReader {
 	}
 
 	/**
+	 * Checks if the previously read character is a line break.
+	 *
+	 * @return {@code true} if the character is \n or \r
+	 */
+	protected boolean isLineBreak() {
+		return tchar == '\n' || tchar == '\r';
+	}
+
+	/**
 	 * Handles the start of a group represented by an opening brace.
 	 */
 	protected void parseStartGroup() {
@@ -178,23 +187,35 @@ public class RtfReader {
 	protected void parseControlSymbol() {
 		// Read symbol (one character only).
 		getChar();
-		char symbol = tchar;
 
-		// Symbols ordinarily have no parameter. However, if this is \', then it
-		// is followed by a 2-digit hex-code.
-		int parameter = 0;
-		if (symbol == '\'') {
-			getChar();
-			String firstChar = tchar + "";
-			getChar();
-			String secondChar = tchar + "";
-			parameter = hexdec(firstChar + secondChar);
+		/*
+		 	"A carriage return (character value 13) or line feed (character value 10) is treated as a \par
+		     control if the character is preceded by a backslash. You must include the backslash; otherwise,
+		     RTF ignores the control word."
+		 */
+		if ( isLineBreak() ) {
+			RtfControlWord rtfWord = new RtfControlWord();
+			rtfWord.word = "par";
+			rtfWord.parameter = -1;
+			group.children.add(rtfWord);
+		} else {
+			char symbol = tchar;
+			// Symbols ordinarily have no parameter. However, if this is \', then it
+			// is followed by a 2-digit hex-code.
+			int parameter = 0;
+			if (symbol == '\'') {
+				getChar();
+				String firstChar = tchar + "";
+				getChar();
+				String secondChar = tchar + "";
+				parameter = hexdec(firstChar + secondChar);
+			}
+
+			RtfControlSymbol rtfSymbol = new RtfControlSymbol();
+			rtfSymbol.symbol = symbol;
+			rtfSymbol.parameter = parameter;
+			group.children.add(rtfSymbol);
 		}
-
-		RtfControlSymbol rtfSymbol = new RtfControlSymbol();
-		rtfSymbol.symbol = symbol;
-		rtfSymbol.parameter = parameter;
-		group.children.add(rtfSymbol);
 	}
 
 	/**
@@ -251,7 +272,10 @@ public class RtfReader {
 			}
 
 			if (!terminate) {
-				text += tchar;
+				// ignore unescaped line breaks
+				if (!isLineBreak()) {
+					text += tchar;
+				}
 				getChar();
 			}
 		} while (!terminate && pos < len);
@@ -319,8 +343,8 @@ public class RtfReader {
 			// Read next character.
 			getChar();
 
-			// Ignore \r and \n.
-			if (tchar == '\n' || tchar == '\r') {
+			// Ignore unescaped line breaks
+			if (isLineBreak()) {
 				continue;
 			}
 
