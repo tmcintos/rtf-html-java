@@ -16,6 +16,10 @@ public class RtfControlSymbol extends RtfElement {
 	 */
 	public int parameter = 0;
 
+	public boolean isIgnorableDestinationMarker() {
+		return symbol == '*';
+	}
+
 	/*
 	 * (non-Javadoc)
 	 *

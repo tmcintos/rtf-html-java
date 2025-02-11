@@ -28,44 +28,61 @@ public class RtfGroup extends RtfElement {
 	}
 
 	/**
+	 * Get the first child.
+	 *
+	 * @return the first child, or null if none
+	 */
+	protected RtfElement getFirstChild() {
+		if (children.isEmpty()) {
+			return null;
+		}
+		return children.get(0);
+	}
+
+	/**
+	 * Get the destination.
+	 *
+	 * @return The first RtfControlWord of the group, or null if there is none.
+	 */
+	public RtfControlWord getDestination() {
+		RtfElement firstChild = getFirstChild();
+
+		// If the first child is an ignorable destination marker, then skip it.
+		if (firstChild instanceof RtfControlSymbol) {
+			RtfControlSymbol rtfControlSymbol = (RtfControlSymbol) firstChild;
+			if (rtfControlSymbol.isIgnorableDestinationMarker() && children.size() > 1) {
+				firstChild = children.get(1);
+			}
+		}
+
+		if (firstChild instanceof RtfControlWord) {
+			return (RtfControlWord) firstChild;
+		}
+
+		return null;
+	}
+
+	/**
 	 * Gets the group type.
 	 *
 	 * @return control word of the first child as type or an empty string if
 	 *         there are no children or the first child is not a control word
 	 */
 	public String getType() {
-		// No children?
-		if (children.isEmpty()) {
-			return "";
-		}
-
-		// First child not a control word?
-		RtfElement child = children.get(0);
-		if (!(child instanceof RtfControlWord)) {
-			return "";
-		}
-
-		return ((RtfControlWord) child).word;
+		RtfControlWord destination = getDestination();
+		return (destination != null) ? destination.word : "";
 	}
 
 	/**
-	 * Checks if the group is a destination.
+	 * Indicates whether this entire group should be ignored when its destination is unknown.
 	 *
-	 * @return {@code true} if a certain control word is referred
+	 * @return true if the first child of the group is an ignorable destination marker, false otherwise
 	 */
-	public boolean isDestination() {
-		// No children?
-		if (children.isEmpty()) {
-			return false;
-		}
+	public boolean isIgnorableDestination() {
+		RtfElement firstChild = getFirstChild();
+		RtfControlSymbol controlSymbol = firstChild instanceof RtfControlSymbol ? (RtfControlSymbol)firstChild : null;
 
-		// First child not a control symbol?
-		RtfElement child = children.get(0);
-		if (!(child instanceof RtfControlSymbol)) {
-			return false;
-		}
-
-		return ((RtfControlSymbol) child).symbol == '*';
+		return (controlSymbol != null) && controlSymbol.isIgnorableDestinationMarker();
 	}
 
 	/**
@@ -109,7 +126,7 @@ public class RtfGroup extends RtfElement {
 				if (group.getType().length() >= 4 && group.getType().substring(0, 4).equals("pict")) {
 					continue;
 				}
-				if (group.isDestination()) {
+				if (group.isIgnorableDestination()) {
 					continue;
 				}
 			}

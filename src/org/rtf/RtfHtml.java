@@ -228,8 +228,8 @@ public class RtfHtml {
 		if (group.getType().length() >= 4 && group.getType().substring(0, 4).equals("pict")) {
 			return;
 		}
-		// Ignore destinations.
-		if (group.isDestination()) {
+		// Ignore ignorable destinations.
+		if (group.isIgnorableDestination()) {
 			return;
 		}
 
@@ -238,11 +238,16 @@ public class RtfHtml {
 		states.push(state);
 
 		// Format all group children.
+		RtfControlWord destination = group.getDestination();
 		for (RtfElement child : group.children) {
 			if (child instanceof RtfGroup) {
 				formatGroup((RtfGroup) child);
 			} else if (child instanceof RtfControlWord) {
-				formatControlWord((RtfControlWord) child);
+				boolean unknown = formatControlWord((RtfControlWord) child);
+				// if the group has an unknown destination, then ignore it
+				if ( unknown && child == destination && group.isIgnorableDestination() ) {
+					break;
+				}
 			} else if (child instanceof RtfControlSymbol) {
 				formatControlSymbol((RtfControlSymbol) child);
 			} else if (child instanceof RtfText) {
@@ -260,8 +265,11 @@ public class RtfHtml {
 	 *
 	 * @param rtfWord
 	 *            word element to process
+	 *
+	 * @return true if the control word is unknown, otherwise false.
 	 */
-	protected void formatControlWord(RtfControlWord rtfWord) {
+	protected boolean formatControlWord(RtfControlWord rtfWord) {
+		boolean unknown = false;
 		if (rtfWord.word.equals("plain") || rtfWord.word.equals("pard")) {
 			state.reset();
 		} else
@@ -332,7 +340,10 @@ public class RtfHtml {
 			output += "<p>";
 			openedTags.put("p", true);
 			newRootPar = true;
+		} else {
+			unknown = true;
 		}
+		return unknown;
 	}
 
 	/**
