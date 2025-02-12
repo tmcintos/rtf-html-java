@@ -424,7 +424,7 @@ public class RtfHtml {
 
 	protected String printFontFamily(int index) {
 		// index is 0-based
-		if (index >= 0 && index < fonttbl.size()) {
+		if (fonttbl != null && index >= 0 && index < fonttbl.size()) {
 			return fonttbl.get(index);
 		} else {
 			return "";
@@ -439,7 +439,7 @@ public class RtfHtml {
 	 * @return RGB hex string or an empty string if the position is invalid
 	 */
 	protected String printColor(int index) {
-		if (index >= 1 && index < colortbl.size()) {
+		if (colortbl != null && index >= 1 && index < colortbl.size()) {
 			return colortbl.get(index);
 		} else {
 			return "";
