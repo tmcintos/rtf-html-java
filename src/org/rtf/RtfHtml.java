@@ -80,68 +80,103 @@ public class RtfHtml {
 		List<String> fonttbl = new ArrayList<>();
 		
 		int c = fontTblGrp.size();
-		
+
+		// skip \fonttbl control word
 		for (int i = 1; i < c; i++) {
 			// assume that font table entries are present in order of their index, i. e. f0, f1, f2...
-			if (fontTblGrp.get(i) instanceof RtfGroup) {
-				RtfGroup fontDesc = (RtfGroup) fontTblGrp.get(i);
-				String fontFamily = "";
-				// process font description group
-				List<RtfElement> fontAttrs = fontDesc.children;
-				// assume that the font index is the first (at least) RtfElement in the font descriptor RtfGroup.
-				// Only RtfControlWord and RtfText elements are processed here. RtfGroups are not processed.
-				for (int fa = 1; fa < fontAttrs.size(); fa++) {
-					RtfElement faElem = fontAttrs.get(fa);
-					if (faElem instanceof RtfControlWord) {
-						// font attribute
-						RtfControlWord fontAttr = (RtfControlWord) faElem;
-						// font family (has only one of):
-						if (fontAttr.word.equals("fnil")) {
-							// font family Unknown/Default -> no font name applicable so far
-						} else 
-						if (fontAttr.word.equals("froman")) {
-							// font family Roman (proportionally spaced, serif)
-							fontFamily = "Times,serif";
-						} else 
-						if (fontAttr.word.equals("fswiss")) {
-							// font family Swiss (proportionally spaced, sans-serif)
-							fontFamily = "Helvetica,Swiss,sans-serif";
-						} else 
-						if (fontAttr.word.equals("fmodern")) {
-							// font family Fixed-pitch (typewriter)
-							fontFamily = "Courier,monospace";
-						} else 
-						if (fontAttr.word.equals("fscript")) {
-							// font family Script (like handwritten)
-							fontFamily = "Cursive";
-						} else 
-						if (fontAttr.word.equals("fdecor")) {
-							// font family Decorative
-							fontFamily = "'ITC Zapf Chancery'";
-						} else 
-						if (fontAttr.word.equals("ftech")) {
-							// font family Non-Unicode, technical, symbol
-							fontFamily = "Symbol,Wingdings";
-						} else 
-						if (fontAttr.word.equals("fbidi")) {
-							// font family bi-directional
-							fontFamily = "Miriam";
-						} else 
-						// charset (after font family setting):
-						if (fontAttr.word.equals("fcharset")) {
-							// font charset reference (with parameter)
-							// 0 = default charset as defined in RTF header (assume ANSI, CP1252)
-							// 2 = SYMBOL_CHARSET (CP42)
-							if (fontAttr.parameter == 2) {
-								// supersede font family by forcing "Symbol" font
-								fontFamily = "Symbol";
-							}
+			RtfElement fontDescElem = fontTblGrp.get(i);
+			List<RtfElement> fontAttrs;
+
+			if (fontDescElem instanceof RtfGroup) {
+				//Standard behavior: font descriptors are in groups: {\f0...\f1...}
+				fontAttrs = ((RtfGroup) fontDescElem).children;
+			} else {
+				// Apple RTF extension: font descriptor elements are not grouped: \f0...\f1...
+				fontAttrs = new ArrayList<RtfElement>();
+
+				if (fontDescElem.isFontNumber()) {
+					fontAttrs.add(fontDescElem);
+					i++;
+				} else {
+					System.err.println("Warning: Unexpected font descriptor element: " + fontDescElem);
+					continue;
+				}
+
+				// collect all subsequent font table control words and text
+				while (i < c && !(fontTblGrp.get(i) instanceof RtfGroup)) {
+					RtfElement elem = fontTblGrp.get(i);
+
+					if (elem instanceof RtfControlWord) {
+						RtfControlWord controlWord = (RtfControlWord) elem;
+						// stop if next font descriptor is found (fN)
+						if (controlWord.isFontNumber()) {
+							break;
 						}
-						// /cpgN (code page) is ignored. 42 however would equal /fcharset2 (Symbol)
 					}
-					if (faElem instanceof RtfText) {
-						// font name
-						RtfText fontName = (RtfText) faElem;
+					fontAttrs.add(elem);
+					i++;
+				}
+				// account for i++ at the end of the for loop above
+				i--;
+			}
+
+			// process fontAttrs
+			String fontFamily = "";
+
+			// assume that the font index is the first (at least) RtfElement in the font descriptor RtfGroup.
+			// Only RtfControlWord and RtfText elements are processed here. RtfGroups are not processed.
+			for (int fa = 1; fa < fontAttrs.size(); fa++) {
+				RtfElement faElem = fontAttrs.get(fa);
+				if (faElem instanceof RtfControlWord) {
+					// font attribute
+					RtfControlWord fontAttr = (RtfControlWord) faElem;
+					// font family (has only one of):
+					if (fontAttr.word.equals("fnil")) {
+						// font family Unknown/Default -> no font name applicable so far
+					} else
+					if (fontAttr.word.equals("froman")) {
+						// font family Roman (proportionally spaced, serif)
+						fontFamily = "Times,serif";
+					} else
+					if (fontAttr.word.equals("fswiss")) {
+						// font family Swiss (proportionally spaced, sans-serif)
+						fontFamily = "Helvetica,Swiss,sans-serif";
+					} else
+					if (fontAttr.word.equals("fmodern")) {
+						// font family Fixed-pitch (typewriter)
+						fontFamily = "Courier,monospace";
+					} else
+					if (fontAttr.word.equals("fscript")) {
+						// font family Script (like handwritten)
+						fontFamily = "Cursive";
+					} else
+					if (fontAttr.word.equals("fdecor")) {
+						// font family Decorative
+						fontFamily = "'ITC Zapf Chancery'";
+					} else
+					if (fontAttr.word.equals("ftech")) {
+						// font family Non-Unicode, technical, symbol
+						fontFamily = "Symbol,Wingdings";
+					} else
+					if (fontAttr.word.equals("fbidi")) {
+						// font family bi-directional
+						fontFamily = "Miriam";
+					} else
+					// charset (after font family setting):
+					if (fontAttr.word.equals("fcharset")) {
+						// font charset reference (with parameter)
+						// 0 = default charset as defined in RTF header (assume ANSI, CP1252)
+						// 2 = SYMBOL_CHARSET (CP42)
+						if (fontAttr.parameter == 2) {
+							// supersede font family by forcing "Symbol" font
+							fontFamily = "Symbol";
+						}
+					}
+					// /cpgN (code page) is ignored. 42 however would equal /fcharset2 (Symbol)
+				}
+				if (faElem instanceof RtfText) {
+					// font name
+					RtfText fontName = (RtfText) faElem;
 						String fontNameText = fontName.text;
 						if (!";".equals(fontNameText)) {
 							if (fontNameText.endsWith(";")) {
@@ -155,8 +190,9 @@ public class RtfHtml {
 								fontFamily = "'" + fontNameText + "'" + fontFamily;
 							}
 						}
-					}
 				}
+			}
+			if(fontFamily != null && !fontFamily.isEmpty()) {
 				fonttbl.add(fontFamily);
 			}
 		}

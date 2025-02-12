@@ -28,4 +28,14 @@ public class RtfControlWord extends RtfElement {
 		System.out.println("WORD " + word + " (" + parameter + ")");
 		System.out.println("</div>");
 	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see org.rtf.RtfElement#isFontNumber()
+	 */
+	@Override
+	public boolean isFontNumber() {
+		return word != null && word.equals("f") && parameter >= 0;
+	}
 }

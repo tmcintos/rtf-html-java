@@ -29,4 +29,13 @@ public abstract class RtfElement {
 			System.out.println("&nbsp;");
 		}
 	}
+
+	/**
+	 * Tests for a font number (\fN) element.
+	 *
+	 * @return true if this element is a font number (\fN) element
+	 */
+	public boolean isFontNumber() {
+		return false;
+	}
 }
