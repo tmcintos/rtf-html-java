@@ -407,7 +407,7 @@ public class RtfHtml {
 
 	/**
 	 * Calculate reduced font size based on actual state.
-	 * If actual state defines a font size, then CSS fon-size with 2/3 of this is returned,
+	 * If actual state defines a font size, then CSS font-size with 2/3 of this is returned,
 	 * else "smaller" is returned.
 	 * @return CSS for reduced font size.
 	 */
