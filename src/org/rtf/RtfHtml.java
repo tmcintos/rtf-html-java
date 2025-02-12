@@ -454,7 +454,17 @@ public class RtfHtml {
 	 */
 	protected void closeTag(String tag) {
 		if (openedTags.get(tag)) {
-			output += "</" + tag + ">";
+			boolean p = tag.equals("p");
+			if (p && output.endsWith("<p>")) {
+				// avoid empty paragraphs
+				output = output.substring(0, output.length() - 3) + "<br>\n";
+			} else {
+				output += "</" + tag + ">";
+				// add line break after paragraph for source readability
+				if (p) {
+					output += "\n";
+				}
+			}
 			openedTags.put(tag, false);
 		}
 	}
@@ -477,9 +487,15 @@ public class RtfHtml {
 		source.append("<html>\n");
 		source.append("  <head>\n");
 		source.append("    <meta content=\"text/html;charset=UTF-8\" http-equiv=\"content-type\"/>\n");
+		source.append("		<style>\n");
+		source.append("		  p {\n");
+		source.append("         margin: 0; /* Remove default margins */\n");
+		source.append("         padding: 0; /* Remove default padding */\n");
+		source.append("		  }\n");
+		source.append("		</style>\n");
 		source.append("  </head>\n");
 		source.append("  <body>\n");
-		source.append(output + "\n");
+		source.append(output);
 		source.append("  </body>\n");
 		source.append("</html>\n");
 		output = source.toString();
