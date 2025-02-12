@@ -74,6 +74,11 @@ public class RtfState implements Cloneable {
 	public int background;
 
 	/**
+	 * Hyperlink URI
+	 */
+	public String hyperlink;
+
+	/**
 	 * Creates a new RTF state.
 	 */
 	public RtfState() {
@@ -100,6 +105,7 @@ public class RtfState implements Cloneable {
 		newState.font = this.font;
 		newState.textColor = this.textColor;
 		newState.background = this.background;
+		newState.hyperlink = this.hyperlink;
 		return newState;
 	}
 
@@ -128,7 +134,8 @@ public class RtfState implements Cloneable {
 				&& this.subscript == anotherState.subscript && this.superscript == anotherState.superscript
 				&& this.hidden == anotherState.hidden && this.fontSize == anotherState.fontSize
 				&& this.font == anotherState.font
-				&& this.textColor == anotherState.textColor && this.background == anotherState.background;
+				&& this.textColor == anotherState.textColor && this.background == anotherState.background
+				&& (this.hyperlink == anotherState.hyperlink || (this.hyperlink != null && this.hyperlink.equals(anotherState.hyperlink)));
 	}
 
 	/**
@@ -147,5 +154,6 @@ public class RtfState implements Cloneable {
 		font = 0;
 		textColor = 0;
 		background = 0;
+		hyperlink = null;
 	}
 }

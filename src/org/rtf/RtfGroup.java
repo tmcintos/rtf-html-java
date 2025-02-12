@@ -40,6 +40,44 @@ public class RtfGroup extends RtfElement {
 	}
 
 	/**
+	 * Find the first sub-group of the given type.
+	 *
+	 * @param type type of the sub-group
+	 *
+	 * @return the first sub-group of the given type, or null if there is none
+	 */
+	public RtfGroup findFirstSubgroupOfType(String type) {
+		for (RtfElement child : children) {
+			if (child instanceof RtfGroup) {
+				RtfGroup group = (RtfGroup) child;
+				if (group.getType().equals(type)) {
+					return group;
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Find the first text subgroup.
+	 *
+	 * @return the first text subgroup, or null if there is none
+	 */
+	public RtfText findFirstTextSubgroup() {
+		RtfGroup subgroup = findFirstSubgroupOfType("");
+		if(subgroup != null) {
+			RtfElement firstChild = subgroup.getFirstChild();
+
+			if(firstChild instanceof RtfText) {
+				return (RtfText) firstChild;
+			}
+		}
+		return null;
+
+
+	}
+
+	/**
 	 * Get the destination.
 	 *
 	 * @return The first RtfControlWord of the group, or null if there is none.

@@ -1,10 +1,14 @@
 package org.rtf;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class is the HTML formatter.
@@ -235,6 +239,46 @@ public class RtfHtml {
 		this.colortbl = colortbl;
 	}
 
+	private static final String HYPERLINK_PREFIX = "HYPERLINK";
+	private static final Pattern HYPERLINK_PATTERN = Pattern.compile("^HYPERLINK\\s+(.*)$");
+
+	protected RtfGroup formatField(RtfGroup field) {
+		RtfGroup fldinst = field.findFirstSubgroupOfType("fldinst");
+		RtfGroup fldrslt = field.findFirstSubgroupOfType("fldrslt");
+
+		if (fldinst != null && fldrslt != null) {
+			RtfText fldinstText = fldinst.findFirstTextSubgroup();
+			if (fldinstText != null) {
+				String fldinstTextString = fldinstText.text;
+
+				Matcher matcher = HYPERLINK_PATTERN.matcher(fldinstTextString);
+				if (matcher.matches()) {
+					String fieldArgument = matcher.group(1).trim();
+
+					// Remove surrounding quotes if present
+					if (fieldArgument.startsWith("\"") && fieldArgument.endsWith("\"")) {
+						fieldArgument = fieldArgument.substring(1, fieldArgument.length() - 1);
+					}
+
+					// Attempt to parse as a URI
+					try {
+						URI uri = new URI(fieldArgument);
+						state.hyperlink = uri.toString(); // Store the normalized URI
+					} catch (URISyntaxException e) {
+						// Not a valid URI, treat it as a file path or bookmark
+						System.err.println("Warning: Not a valid URI, treating as file path or bookmark: " + fieldArgument);
+						state.hyperlink = fieldArgument; // Store as-is
+					}
+				} else {
+					// Handle the case where the string is not in the expected format
+					System.err.println("Warning: Invalid hyperlink format: " + fldinstTextString);
+					state.hyperlink = null; // Or set to a default value, or throw an exception
+				}
+			}
+		}
+		return field;
+	}
+
 	/**
 	 * Formats an RTF group.
 	 *
@@ -265,14 +309,14 @@ public class RtfHtml {
 		if (group.getType().length() >= 4 && group.getType().substring(0, 4).equals("pict")) {
 			return;
 		}
-		// Ignore ignorable destinations.
-		if (group.isIgnorableDestination()) {
-			return;
-		}
 
 		// Push a new state onto the stack.
 		state = (RtfState) state.clone();
 		states.push(state);
+
+		if (group.getType().equals("field")) {
+			group = formatField(group);
+		}
 
 		// Format all group children.
 		RtfControlWord destination = group.getDestination();
@@ -444,6 +488,10 @@ public class RtfHtml {
 
 			// Close previously opened "span" tag.
 			closeTag("span");
+
+			if (state.hyperlink != null) {
+				txt = "<a href=\"" + state.hyperlink + "\">" + txt + "</a>";
+			}
 
 			output += "<span style=\"" + span + "\">" + txt;
 			openedTags.put("span", true);
