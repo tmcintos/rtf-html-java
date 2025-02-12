@@ -59,6 +59,7 @@ public class RtfHtml {
 		output = "<p>";
 		newRootPar = true;
 		formatGroup(root);
+		closeTags();
 		if (page) {
 			wrapTags();
 		}
@@ -494,10 +495,11 @@ public class RtfHtml {
 	 */
 	protected void wrapTags() {
 		StringBuilder source = new StringBuilder();
-		source.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
+		source.append("<!DOCTYPE html>\n");
 		source.append("<html>\n");
 		source.append("  <head>\n");
 		source.append("    <meta content=\"text/html;charset=UTF-8\" http-equiv=\"content-type\"/>\n");
+		source.append("    <title></title>\n");
 		source.append("		<style>\n");
 		source.append("		  p {\n");
 		source.append("         margin: 0; /* Remove default margins */\n");
