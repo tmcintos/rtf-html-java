@@ -585,6 +585,9 @@ public class RtfHtml {
 		source.append("    <meta content=\"text/html;charset=UTF-8\" http-equiv=\"content-type\"/>\n");
 		source.append("    <title></title>\n");
 		source.append("		<style>\n");
+		source.append("		  :root {\n");
+		source.append("		      color-scheme: light dark;\n");
+		source.append("		  }\n");
 		source.append("		  p {\n");
 		source.append("         margin: 0; /* Remove default margins */\n");
 		source.append("         padding: 0; /* Remove default padding */\n");
