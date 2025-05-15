@@ -6,7 +6,7 @@ android {
     namespace = "org.rtf"
 
     // Android SDK to link (not run) against
-    compileSdk = 35
+    compileSdk = 36
 
     // JDK used to compile the project
     java.toolchain.languageVersion = JavaLanguageVersion.of(17)
